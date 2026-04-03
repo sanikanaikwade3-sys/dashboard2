@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart City Air Quality Monitoring Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root{
+      --bg:#06090d;--bg2:#0b1016;--panel:#101720;--panel2:#151f2b;--panel3:#1c2938;--line:rgba(255,255,255,.09);
+      --text:#eef4fb;--muted:#a6b3c4;--green:#2dd36f;--yellow:#ffd43b;--orange:#ff922b;--red:#ff4d6d;--cyan:#3bc9db;--blue:#4dabf7;--purple:#b197fc;
+      --radius:22px;--shadow:0 20px 50px rgba(0,0,0,.34);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'Inter',sans-serif;color:var(--text);line-height:1.6;
+      background:
+      radial-gradient(circle at 10% 10%, rgba(59,201,219,.12), transparent 22%),
+      radial-gradient(circle at 90% 0%, rgba(77,171,247,.14), transparent 26%),
+      radial-gradient(circle at 70% 30%, rgba(45,211,111,.08), transparent 18%),
+      linear-gradient(180deg, var(--bg), var(--bg2));
+    }
+    .shell{max-width:1550px;margin:auto;padding:22px}
+    .topbar{position:sticky;top:12px;z-index:20;background:rgba(8,12,16,.86);border:1px solid var(--line);backdrop-filter:blur(18px);border-radius:18px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:16px;box-shadow:var(--shadow);margin-bottom:22px}
+    .brand{display:flex;align-items:center;gap:14px}.brandcopy h1{font-family:'Orbitron',sans-serif;font-size:1.15rem;letter-spacing:.06em}.brandcopy p,.meta,.nav a{color:var(--muted)}
+    .logo{width:48px;height:48px;border-radius:14px;background:conic-gradient(from 150deg,var(--green),var(--yellow),var(--orange),var(--red),var(--green));display:grid;place-items:center;color:#081018;font-weight:900}
+    .nav{display:flex;gap:10px;flex-wrap:wrap}.nav a{text-decoration:none;padding:8px 12px;border:1px solid transparent;border-radius:999px}.nav a:hover{background:rgba(255,255,255,.04);border-color:var(--line);color:var(--text)}
+    .page{min-height:100vh;padding:20px 0 28px;border-bottom:1px solid rgba(255,255,255,.06)}
+    .hero,.grid,.cards,.intro-grid{display:grid;gap:18px}.hero{grid-template-columns:1.35fr .85fr}.grid.two{grid-template-columns:1fr 1fr}.grid.three{grid-template-columns:repeat(3,1fr)}.cards{grid-template-columns:repeat(4,1fr)}.intro-grid{grid-template-columns:1.2fr .8fr}
+    .panel{background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);overflow:hidden}
+    .eyebrow{font-size:.78rem;text-transform:uppercase;letter-spacing:.16em;color:var(--cyan);margin-bottom:10px}.badge{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(59,201,219,.11);border:1px solid rgba(59,201,219,.2);color:var(--cyan);font-size:.86rem}
+    h2{font-family:'Orbitron',sans-serif;font-size:2rem;line-height:1.14;margin-bottom:12px}h3{font-size:1.14rem;margin-bottom:12px}.section-title{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:18px}
+    p{color:var(--muted)} .intro{max-width:74ch}
+    .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.kpi{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:18px;padding:18px;position:relative}
+    .kpi::after{content:'';position:absolute;inset:auto -30px -30px auto;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle, rgba(77,171,247,.22), transparent 60%)}
+    .label{font-size:.84rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}.value{font-size:2.1rem;font-weight:800;margin-top:8px}.hint{font-size:.88rem;color:#90a0b3;margin-top:8px}
+    .aqi-scale{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.chip{padding:8px 14px;border-radius:999px;font-size:.84rem;font-weight:700}.good{background:rgba(45,211,111,.14);color:var(--green)}.moderate{background:rgba(255,212,59,.14);color:var(--yellow)}.poor{background:rgba(255,146,43,.14);color:var(--orange)}.vpoor,.hazard{background:rgba(255,77,109,.14);color:var(--red)}
+    .chart-wrap{height:360px;position:relative;background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.008));border-radius:18px;border:1px solid rgba(255,255,255,.05);padding:12px}.chart-tall{height:430px}.chart-wrap canvas{width:100%!important;height:100%!important;display:block}
+    .subtext,.small{font-size:.94rem;margin-top:14px}.list li{margin:10px 0;color:var(--muted)} .list strong{color:var(--text)}
+    .table{width:100%;border-collapse:collapse;margin-top:12px}.table th,.table td{padding:12px 10px;border-bottom:1px solid var(--line);text-align:left}.table th{font-size:.82rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+    .illustration{min-height:280px;background:linear-gradient(180deg, rgba(59,201,219,.08), rgba(77,171,247,.03));border:1px solid var(--line);border-radius:20px;padding:12px;display:grid;place-items:center}
+    .illu-svg{width:100%;height:100%}.footer-note{margin-top:16px;padding:16px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.03)}
+    .chart-fallback{position:absolute;inset:12px;display:none;place-items:center;text-align:center;border-radius:14px;background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));color:var(--muted);padding:20px}
+    .chart-wrap.failed .chart-fallback{display:grid}.chart-wrap.failed canvas{display:none}
+    @media (max-width:1150px){.hero,.intro-grid,.grid.two,.grid.three,.cards{grid-template-columns:1fr}.topbar{position:static}.chart-wrap,.chart-tall{height:320px}}
+    @media (max-width:700px){.stats{grid-template-columns:1fr}.nav{display:none}.shell{padding:14px}h2{font-size:1.55rem}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">AQ</div>
+        <div class="brandcopy">
+          <h1>Smart City Air Quality Monitoring System</h1>
+          <p>Industry-style environmental analytics dashboard with integrated charts and illustrations</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="#page1">Overview</a><a href="#page2">Time Analysis</a><a href="#page3">Location Analysis</a><a href="#page4">Pollutants</a><a href="#page5">Insights</a>
+      </nav>
+    </header>
+
+    <section class="page" id="page1">
+      <div class="hero">
+        <div class="panel">
+          <div class="eyebrow">Page 1 · Overview Dashboard</div>
+          <h2>Smart City Air Quality Monitoring System</h2>
+          <p class="intro">This dashboard is designed as a professional smart-city monitoring report for urban air-quality assessment. It combines AQI-based performance indicators, time-series analysis, pollutant behavior, location comparison, risk-category distribution, and environmental alerts in one unified dark-theme interface. The layout is intentionally large and information-rich so it resembles an industry-level command center rather than a simple classroom summary. AQI acts as a standardized indicator that converts complex pollutant concentration data into an understandable scale showing whether ambient air is safe, stressed, or hazardous for public exposure.</p>
+          <div class="aqi-scale">
+            <span class="chip good">Good</span><span class="chip moderate">Moderate</span><span class="chip poor">Poor</span><span class="chip vpoor">Very Poor</span><span class="chip hazard">Hazardous</span>
+          </div>
+          <div class="footer-note small">Dataset grain: each row represents one city or location for one observation date, with AQI and measured pollutant values such as PM2.5, PM10, NO2, CO, and SO2. This is a city-date grain suitable for trend analysis, seasonal evaluation, and cross-location comparison.</div>
+        </div>
+        <div class="panel">
+          <div class="stats">
+            <div class="kpi"><div class="label">Average AQI</div><div class="value" id="avgAqi">--</div><div class="hint">Overall air-quality level across observations.</div></div>
+            <div class="kpi"><div class="label">Maximum AQI</div><div class="value" id="maxAqi">--</div><div class="hint">Worst recorded pollution intensity.</div></div>
+            <div class="kpi"><div class="label">Minimum AQI</div><div class="value" id="minAqi">--</div><div class="hint">Best observed air-quality condition.</div></div>
+            <div class="kpi"><div class="label">Total Records</div><div class="value" id="totalRecords">--</div><div class="hint">Number of city-date observations in analysis.</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="intro-grid" style="margin-top:18px">
+        <div class="panel illustration">
+          <svg class="illu-svg" viewBox="0 0 800 360" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Smart city air monitoring illustration">
+            <defs>
+              <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f1e2d"/><stop offset="1" stop-color="#0b1118"/></linearGradient>
+              <linearGradient id="tower" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3bc9db"/><stop offset="1" stop-color="#4dabf7"/></linearGradient>
+            </defs>
+            <rect x="0" y="0" width="800" height="360" rx="26" fill="url(#sky)"/>
+            <circle cx="650" cy="80" r="44" fill="rgba(255,212,59,.18)"/>
+            <path d="M0 285C80 255 130 250 220 267C310 284 400 330 487 310C575 291 648 242 800 258V360H0V285Z" fill="#172331"/>
+            <rect x="80" y="170" width="84" height="120" rx="8" fill="#243244"/>
+            <rect x="186" y="130" width="95" height="160" rx="8" fill="#213042"/>
+            <rect x="305" y="110" width="85" height="180" rx="8" fill="#27384b"/>
+            <rect x="415" y="155" width="90" height="135" rx="8" fill="#223142"/>
+            <rect x="536" y="142" width="78" height="148" rx="8" fill="#233344"/>
+            <rect x="660" y="118" width="55" height="172" rx="8" fill="#24364a"/>
+            <rect x="108" y="145" width="12" height="145" fill="url(#tower)"/>
+            <circle cx="114" cy="140" r="16" stroke="#3bc9db" stroke-width="4"/>
+            <circle cx="114" cy="140" r="34" stroke="#3bc9db" stroke-opacity=".35"/>
+            <circle cx="114" cy="140" r="54" stroke="#3bc9db" stroke-opacity=".14"/>
+            <path d="M114 140L215 98" stroke="#3bc9db" stroke-width="2" stroke-dasharray="6 6"/>
+            <path d="M114 140L347 72" stroke="#4dabf7" stroke-width="2" stroke-dasharray="6 6"/>
+            <path d="M114 140L575 86" stroke="#ffd43b" stroke-width="2" stroke-dasharray="6 6"/>
+            <rect x="585" y="48" width="148" height="72" rx="16" fill="#101720" stroke="rgba(255,255,255,.08)"/>
+            <text x="605" y="76" fill="#eaf1fa" font-size="18" font-family="Inter">Live AQI</text>
+            <text x="605" y="102" fill="#ff922b" font-size="30" font-family="Orbitron">172</text>
+          </svg>
+        </div>
+        <div class="panel">
+          <h3>Dashboard Purpose</h3>
+          <p>This report-style interface is suitable for assignment presentation, portfolio demonstration, and smart-city monitoring concepts. It is intentionally divided into multiple full sections so each analytical layer appears complete and professionally documented.</p>
+          <div class="footer-note">AQI categories are commonly represented with color-coded risk bands, where better air quality is shown in green and more dangerous conditions move toward orange, red, and darker high-risk tones. This dashboard adopts that visual convention for immediate interpretation and alert visibility.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page2">
+      <div class="section-title"><div><div class="eyebrow">Page 2 · Time-Based Analysis</div><h2>AQI Trend and Pollutant Variation Over Time</h2></div><div class="badge">Temporal behavior of urban pollution</div></div>
+      <div class="grid two">
+        <div class="panel">
+          <h3>AQI Trend Over Time</h3>
+          <div class="chart-wrap" id="wrap-aqiTrend"><canvas id="aqiTrend"></canvas><div class="chart-fallback">AQI trend chart could not load from the chart library. Please keep internet enabled in the browser to display the live graph.</div></div>
+          <p class="subtext">This line chart captures the evolution of average AQI over the monitoring period. Upward inflection points indicate worsening environmental pressure, while downward movement signals temporary recovery or seasonal improvement. It is especially useful for identifying pollution waves rather than isolated incidents.</p>
+        </div>
+        <div class="panel">
+          <h3>Pollutant Variation Over Time</h3>
+          <div class="chart-wrap" id="wrap-pollutantArea"><canvas id="pollutantArea"></canvas><div class="chart-fallback">Pollutant area chart could not load from the chart library. Please keep internet enabled in the browser to display the live graph.</div></div>
+          <p class="subtext">The multi-series area chart compares the changing concentration profile of major pollutants across time. It helps reveal whether particulate matter or gaseous pollutants dominate during high-AQI periods and supports interpretation of seasonal or episodic pollution behavior.</p>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:18px">
+        <h3>Peak Pollution Periods</h3>
+        <ul class="list" id="peakPeriods"></ul>
+      </div>
+    </section>
+
+    <section class="page" id="page3">
+      <div class="section-title"><div><div class="eyebrow">Page 3 · Location-Based Analysis</div><h2>Location Comparison Across Cities</h2></div><div class="badge">Spatial benchmarking for intervention planning</div></div>
+      <div class="grid two">
+        <div class="panel">
+          <h3>Average AQI by City / Location</h3>
+          <div class="chart-wrap chart-tall" id="wrap-cityBar"><canvas id="cityBar"></canvas><div class="chart-fallback">City comparison chart could not load from the chart library. Please keep internet enabled in the browser to display the live graph.</div></div>
+          <p class="subtext">This bar chart ranks cities based on their average AQI across the observation window. It makes the most polluted and least polluted locations immediately visible, which is essential for targeted resource allocation, local intervention, and policy prioritization.</p>
+        </div>
+        <div class="panel">
+          <div class="illustration" style="min-height:220px;margin-bottom:16px">
+            <svg class="illu-svg" viewBox="0 0 800 260" xmlns="http://www.w3.org/2000/svg" fill="none" aria-label="City AQI zone comparison illustration">
+              <rect width="800" height="260" rx="22" fill="#0f1722"/>
+              <rect x="90" y="80" width="80" height="120" rx="10" fill="#26364a"/>
+              <rect x="215" y="55" width="90" height="145" rx="10" fill="#29394d"/>
+              <rect x="355" y="30" width="100" height="170" rx="10" fill="#2a3c50"/>
+              <rect x="510" y="68" width="88" height="132" rx="10" fill="#28394b"/>
+              <rect x="640" y="92" width="72" height="108" rx="10" fill="#26374a"/>
+              <rect x="120" y="48" width="18" height="32" rx="8" fill="#2dd36f"/>
+              <rect x="247" y="18" width="18" height="37" rx="8" fill="#ffd43b"/>
+              <rect x="394" y="-8" width="18" height="38" rx="8" fill="#ff4d6d"/>
+              <rect x="544" y="33" width="18" height="35" rx="8" fill="#ff922b"/>
+              <rect x="667" y="61" width="18" height="31" rx="8" fill="#4dabf7"/>
+              <line x1="70" y1="200" x2="730" y2="200" stroke="rgba(255,255,255,.15)"/>
+              <text x="104" y="228" fill="#9fb1c6" font-family="Inter" font-size="18">Low</text>
+              <text x="377" y="228" fill="#9fb1c6" font-family="Inter" font-size="18">High</text>
+              <text x="620" y="228" fill="#9fb1c6" font-family="Inter" font-size="18">Moderate</text>
+            </svg>
+          </div>
+          <h3>Most and Least Polluted Locations</h3>
+          <ul class="list" id="citySummary"></ul>
+          <table class="table"><thead><tr><th>City</th><th>Average AQI</th><th>Category</th></tr></thead><tbody id="cityRows"></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page4">
+      <div class="section-title"><div><div class="eyebrow">Page 4 · Pollutant Analysis</div><h2>Pollutant Concentration Profile</h2></div><div class="badge">Source-oriented pollutant diagnosis</div></div>
+      <div class="grid two">
+        <div class="panel">
+          <h3>Grouped Pollutant Comparison</h3>
+          <div class="chart-wrap chart-tall" id="wrap-pollutantGroup"><canvas id="pollutantGroup"></canvas><div class="chart-fallback">Grouped pollutant chart could not load from the chart library. Please keep internet enabled in the browser to display the live graph.</div></div>
+          <p class="subtext">The grouped comparison chart presents pollutant concentration differences across cities. It helps determine whether particulate pollutants like PM2.5 and PM10 dominate the AQI, or whether gaseous pollutants such as NO2, CO, and SO2 are exerting larger influence in specific locations.</p>
+        </div>
+        <div class="panel">
+          <div class="illustration" style="min-height:220px;margin-bottom:16px">
+            <svg class="illu-svg" viewBox="0 0 800 260" xmlns="http://www.w3.org/2000/svg" fill="none" aria-label="Pollutant particles illustration">
+              <rect width="800" height="260" rx="22" fill="#0f1722"/>
+              <circle cx="130" cy="130" r="44" fill="rgba(45,211,111,.18)" stroke="#2dd36f"/>
+              <circle cx="285" cy="100" r="52" fill="rgba(255,212,59,.16)" stroke="#ffd43b"/>
+              <circle cx="470" cy="140" r="58" fill="rgba(255,146,43,.16)" stroke="#ff922b"/>
+              <circle cx="640" cy="95" r="47" fill="rgba(77,171,247,.16)" stroke="#4dabf7"/>
+              <circle cx="620" cy="180" r="35" fill="rgba(177,151,252,.18)" stroke="#b197fc"/>
+              <text x="103" y="136" fill="#eaf1fa" font-family="Inter" font-size="20">PM2.5</text>
+              <text x="259" y="106" fill="#eaf1fa" font-family="Inter" font-size="20">PM10</text>
+              <text x="449" y="146" fill="#eaf1fa" font-family="Inter" font-size="20">NO2</text>
+              <text x="628" y="101" fill="#eaf1fa" font-family="Inter" font-size="20">CO</text>
+              <text x="602" y="186" fill="#eaf1fa" font-family="Inter" font-size="20">SO2</text>
+            </svg>
+          </div>
+          <h3>Effect of Key Pollutants</h3>
+          <ul class="list">
+            <li><strong>PM2.5:</strong> Very fine particles can enter deep respiratory pathways and are often considered among the most dangerous urban air pollutants.</li>
+            <li><strong>PM10:</strong> Coarser particulate pollution is commonly associated with dust, construction activities, and road emissions.</li>
+            <li><strong>NO2:</strong> Nitrogen dioxide is linked to combustion and traffic emissions and contributes to respiratory irritation and urban haze.</li>
+            <li><strong>CO:</strong> Carbon monoxide interferes with oxygen transport in blood and becomes especially harmful under poorly ventilated, combustion-heavy conditions.</li>
+            <li><strong>SO2:</strong> Sulfur dioxide is often associated with industrial emissions and can aggravate breathing discomfort and atmospheric degradation.</li>
+          </ul>
+          <div class="footer-note" id="dominantPollutant"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page5">
+      <div class="section-title"><div><div class="eyebrow">Page 5 · AQI Category + Insights</div><h2>AQI Distribution, Detailed Insights, and Alert Layer</h2></div><div class="badge">Executive intelligence summary</div></div>
+      <div class="grid two">
+        <div class="panel">
+          <h3>AQI Category Distribution</h3>
+          <div class="chart-wrap" id="wrap-aqiDonut"><canvas id="aqiDonut"></canvas><div class="chart-fallback">AQI category donut chart could not load from the chart library. Please keep internet enabled in the browser to display the live graph.</div></div>
+          <p class="subtext">This donut chart summarizes how many observations fall into each AQI band, ranging from good to hazardous. A high share of poor or very poor categories indicates recurring city-level air-quality pressure rather than occasional isolated spikes.</p>
+        </div>
+        <div class="panel">
+          <h3>Key Insights</h3>
+          <ul class="list" id="keyInsights"></ul>
+          <h3 style="margin-top:18px">Warning / Alert Section</h3>
+          <ul class="list" id="alerts"></ul>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:18px">
+        <div class="eyebrow">Assignment Submission Support</div>
+        <h3>Brief Description</h3>
+        <p>This Smart City Air Quality Monitoring Dashboard is a detailed multi-section dark-theme report that visualizes AQI and pollutant data using KPI cards, time-series charts, city-level comparison, pollutant diagnostics, AQI category analysis, and alert-based insights. It is suitable for academic submission because it presents both visual interpretation and explanatory text in a structured, professional format.</p>
+        <h3>Analysis of Visualizations</h3>
+        <p>The overview cards summarize the operating range of air quality, the time-based charts reveal the rise and fall of pollution across the monitoring period, the location-based chart ranks cities by stress level, the grouped pollutant chart explains which pollutants dominate environmental degradation, and the donut chart highlights how often the dataset falls into safe or unsafe AQI categories.</p>
+        <h3>AI Tools Used</h3>
+        <p>Perplexity AI was used for structured research support and dashboard planning, Power BI is referenced as a professional benchmark for analytical layout and reporting design, and Claude AI may be used for content drafting, explanation refinement, and report narration support.</p>
+      </div>
+    </section>
+  </div>
+
+<script>
+const data = [
+  {date:'2025-01-01', city:'Mumbai', AQI:112, PM25:56, PM10:108, NO2:34, CO:1.2, SO2:14},
+  {date:'2025-01-01', city:'Delhi', AQI:248, PM25:145, PM10:242, NO2:62, CO:2.4, SO2:22},
+  {date:'2025-01-01', city:'Pune', AQI:96, PM25:48, PM10:85, NO2:28, CO:1.0, SO2:10},
+  {date:'2025-01-01', city:'Chennai', AQI:88, PM25:39, PM10:70, NO2:25, CO:0.9, SO2:11},
+  {date:'2025-01-01', city:'Bengaluru', AQI:91, PM25:42, PM10:76, NO2:24, CO:0.8, SO2:9},
+  {date:'2025-01-01', city:'Kolkata', AQI:176, PM25:92, PM10:154, NO2:44, CO:1.6, SO2:16},
+  {date:'2025-02-01', city:'Mumbai', AQI:126, PM25:62, PM10:119, NO2:37, CO:1.3, SO2:15},
+  {date:'2025-02-01', city:'Delhi', AQI:266, PM25:158, PM10:251, NO2:69, CO:2.6, SO2:24},
+  {date:'2025-02-01', city:'Pune', AQI:104, PM25:53, PM10:92, NO2:31, CO:1.1, SO2:11},
+  {date:'2025-02-01', city:'Chennai', AQI:95, PM25:42, PM10:75, NO2:27, CO:0.9, SO2:11},
+  {date:'2025-02-01', city:'Bengaluru', AQI:98, PM25:45, PM10:81, NO2:26, CO:0.9, SO2:10},
+  {date:'2025-02-01', city:'Kolkata', AQI:188, PM25:101, PM10:165, NO2:46, CO:1.7, SO2:17},
+  {date:'2025-03-01', city:'Mumbai', AQI:133, PM25:67, PM10:124, NO2:38, CO:1.4, SO2:15},
+  {date:'2025-03-01', city:'Delhi', AQI:281, PM25:166, PM10:264, NO2:71, CO:2.8, SO2:25},
+  {date:'2025-03-01', city:'Pune', AQI:109, PM25:57, PM10:95, NO2:32, CO:1.1, SO2:12},
+  {date:'2025-03-01', city:'Chennai', AQI:98, PM25:43, PM10:79, NO2:28, CO:0.9, SO2:12},
+  {date:'2025-03-01', city:'Bengaluru', AQI:101, PM25:47, PM10:84, NO2:27, CO:0.9, SO2:10},
+  {date:'2025-03-01', city:'Kolkata', AQI:194, PM25:106, PM10:171, NO2:49, CO:1.8, SO2:18},
+  {date:'2025-04-01', city:'Mumbai', AQI:118, PM25:59, PM10:111, NO2:33, CO:1.2, SO2:14},
+  {date:'2025-04-01', city:'Delhi', AQI:238, PM25:137, PM10:231, NO2:60, CO:2.3, SO2:21},
+  {date:'2025-04-01', city:'Pune', AQI:97, PM25:50, PM10:87, NO2:29, CO:1.0, SO2:11},
+  {date:'2025-04-01', city:'Chennai', AQI:84, PM25:36, PM10:68, NO2:24, CO:0.8, SO2:10},
+  {date:'2025-04-01', city:'Bengaluru', AQI:89, PM25:39, PM10:72, NO2:23, CO:0.8, SO2:9},
+  {date:'2025-04-01', city:'Kolkata', AQI:172, PM25:89, PM10:149, NO2:42, CO:1.5, SO2:16},
+  {date:'2025-05-01', city:'Mumbai', AQI:102, PM25:49, PM10:97, NO2:30, CO:1.0, SO2:12},
+  {date:'2025-05-01', city:'Delhi', AQI:214, PM25:121, PM10:210, NO2:56, CO:2.1, SO2:19},
+  {date:'2025-05-01', city:'Pune', AQI:90, PM25:44, PM10:79, NO2:26, CO:0.9, SO2:10},
+  {date:'2025-05-01', city:'Chennai', AQI:79, PM25:33, PM10:60, NO2:22, CO:0.7, SO2:9},
+  {date:'2025-05-01', city:'Bengaluru', AQI:82, PM25:35, PM10:65, NO2:22, CO:0.7, SO2:8},
+  {date:'2025-05-01', city:'Kolkata', AQI:159, PM25:80, PM10:138, NO2:39, CO:1.4, SO2:15},
+  {date:'2025-06-01', city:'Mumbai', AQI:95, PM25:43, PM10:90, NO2:28, CO:0.9, SO2:11},
+  {date:'2025-06-01', city:'Delhi', AQI:196, PM25:109, PM10:194, NO2:51, CO:1.9, SO2:18},
+  {date:'2025-06-01', city:'Pune', AQI:84, PM25:39, PM10:72, NO2:24, CO:0.8, SO2:9},
+  {date:'2025-06-01', city:'Chennai', AQI:72, PM25:29, PM10:55, NO2:20, CO:0.7, SO2:8},
+  {date:'2025-06-01', city:'Bengaluru', AQI:78, PM25:31, PM10:58, NO2:20, CO:0.7, SO2:8},
+  {date:'2025-06-01', city:'Kolkata', AQI:148, PM25:74, PM10:129, NO2:36, CO:1.3, SO2:14}
+];
+
+const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+const round = n => Math.round(n*10)/10;
+const aqiValues = data.map(d=>d.AQI);
+document.getElementById('avgAqi').textContent = round(avg(aqiValues));
+document.getElementById('maxAqi').textContent = Math.max(...aqiValues);
+document.getElementById('minAqi').textContent = Math.min(...aqiValues);
+document.getElementById('totalRecords').textContent = data.length;
+
+const months = [...new Set(data.map(d=>d.date))];
+const monthLabels = months.map(d=>new Date(d).toLocaleString('en-US',{month:'short',year:'numeric'}));
+const monthlyAvgAQI = months.map(m=>round(avg(data.filter(d=>d.date===m).map(d=>d.AQI))));
+const pollutantMonthly = key => months.map(m=>round(avg(data.filter(d=>d.date===m).map(d=>d[key]))));
+
+const cityMap = [...new Set(data.map(d=>d.city))].map(city=>{
+  const rows = data.filter(d=>d.city===city);
+  return {city, AQI:round(avg(rows.map(r=>r.AQI))), PM25:round(avg(rows.map(r=>r.PM25))), PM10:round(avg(rows.map(r=>r.PM10))), NO2:round(avg(rows.map(r=>r.NO2))), CO:round(avg(rows.map(r=>r.CO))), SO2:round(avg(rows.map(r=>r.SO2)))};
+}).sort((a,b)=>b.AQI-a.AQI);
+
+const category = aqi => aqi<=50?'Good':aqi<=100?'Moderate':aqi<=200?'Poor':aqi<=300?'Very Poor':'Hazardous';
+const catColor = {Good:'#2dd36f',Moderate:'#ffd43b',Poor:'#ff922b','Very Poor':'#ff6b6b',Hazardous:'#c9184a'};
+const catCounts = ['Good','Moderate','Poor','Very Poor','Hazardous'].map(c => data.filter(d=>category(d.AQI)===c).length);
+
+const topPeaks = [...data].sort((a,b)=>b.AQI-a.AQI).slice(0,5);
+document.getElementById('peakPeriods').innerHTML = topPeaks.map(d => `<li><strong>${d.city}</strong> reached an AQI of <strong>${d.AQI}</strong> on <strong>${new Date(d.date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</strong>, showing a strong peak pollution episode that would justify urban monitoring alerts and mitigation review.</li>`).join('');
+
+const top5 = cityMap.slice(0,5);
+const least = [...cityMap].slice(-3).reverse();
+document.getElementById('citySummary').innerHTML = `
+<li><strong>Top 5 most polluted locations:</strong> ${top5.map(c=>`${c.city} (${c.AQI})`).join(', ')}.</li>
+<li><strong>Least polluted locations:</strong> ${least.map(c=>`${c.city} (${c.AQI})`).join(', ')}.</li>
+<li><strong>Interpretation:</strong> High-AQI cities require stronger traffic, industrial, and construction emission management, while lower-AQI cities provide benchmarks for cleaner urban performance.</li>`;
+document.getElementById('cityRows').innerHTML = cityMap.map(c=>`<tr><td>${c.city}</td><td>${c.AQI}</td><td>${category(c.AQI)}</td></tr>`).join('');
+
+const pollutantMeans = ['PM25','PM10','NO2','CO','SO2'].map(k=>({key:k,val:round(avg(data.map(d=>d[k])))})).sort((a,b)=>b.val-a.val);
+document.getElementById('dominantPollutant').innerHTML = `<strong>Dominant pollutant observation:</strong> ${pollutantMeans[0].key} has the highest average level in this dataset, followed by ${pollutantMeans[1].key}. This pattern suggests that particulate pollution plays the leading role in driving AQI escalation in the monitored smart-city environment.`;
+
+document.getElementById('keyInsights').innerHTML = [
+  `The mean AQI of the dataset is ${round(avg(aqiValues))}, which indicates that the overall environment frequently operates outside the cleanest air-quality band.`,
+  `${cityMap[0].city} has the highest average AQI at ${cityMap[0].AQI}, making it the most critical city for targeted policy action and pollution control.`,
+  `${least[0].city} records the lowest average AQI at ${least[0].AQI}, showing relatively better ambient air conditions compared with the rest of the monitored locations.`,
+  `Particulate matter remains the strongest contributor to air-quality stress, as ${pollutantMeans[0].key} and ${pollutantMeans[1].key} dominate the overall pollutant profile.`,
+  `The strongest pollution peaks are concentrated around ${topPeaks.slice(0,3).map(x=>new Date(x.date).toLocaleString('en-US',{month:'short',year:'numeric'})).join(', ')}, which signals clear temporal clustering of severe air-quality conditions.`
+].map(t=>`<li><strong>Insight:</strong> ${t}</li>`).join('');
+
+const alerts = data.filter(d=>d.AQI>200).sort((a,b)=>b.AQI-a.AQI).slice(0,6);
+document.getElementById('alerts').innerHTML = alerts.map(a=>`<li><strong>Alert:</strong> ${a.city} exceeded the selected high-risk threshold with AQI <strong>${a.AQI}</strong> on <strong>${new Date(a.date).toLocaleDateString('en-GB')}</strong>, indicating conditions where sensitive populations may require reduced outdoor exposure and faster local mitigation response.</li>`).join('');
+
+function chartOptions() {
+  return {
+    responsive:true,
+    maintainAspectRatio:false,
+    animation:{duration:1200},
+    plugins:{legend:{labels:{color:'#e7eef7',boxWidth:14,padding:16}},tooltip:{backgroundColor:'rgba(9,13,18,.95)',borderColor:'rgba(255,255,255,.08)',borderWidth:1,titleColor:'#fff',bodyColor:'#d8e5f2'}},
+    scales:{x:{ticks:{color:'#b5c2d1'},grid:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#b5c2d1'},grid:{color:'rgba(255,255,255,.06)'}}}
+  };
+}
+function fail(id){document.getElementById('wrap-'+id).classList.add('failed');}
+function makeCharts(){
+  if(typeof Chart === 'undefined'){['aqiTrend','pollutantArea','cityBar','pollutantGroup','aqiDonut'].forEach(fail);return;}
+  Chart.defaults.color='#e7eef7'; Chart.defaults.font.family='Inter'; Chart.defaults.borderColor='rgba(255,255,255,.08)';
+  try{
+    new Chart(document.getElementById('aqiTrend').getContext('2d'), {type:'line',data:{labels:monthLabels,datasets:[{label:'Average AQI',data:monthlyAvgAQI,borderColor:'#4dabf7',backgroundColor:'rgba(77,171,247,.20)',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:'#ffd43b',pointBorderWidth:2,pointBorderColor:'#0b1016'}]},options:chartOptions()});
+  }catch(e){fail('aqiTrend')}
+  try{
+    new Chart(document.getElementById('pollutantArea').getContext('2d'), {type:'line',data:{labels:monthLabels,datasets:[{label:'PM2.5',data:pollutantMonthly('PM25'),borderColor:'#2dd36f',backgroundColor:'rgba(45,211,111,.14)',fill:true,tension:.3},{label:'PM10',data:pollutantMonthly('PM10'),borderColor:'#ffd43b',backgroundColor:'rgba(255,212,59,.12)',fill:true,tension:.3},{label:'NO2',data:pollutantMonthly('NO2'),borderColor:'#ff922b',backgroundColor:'rgba(255,146,43,.12)',fill:true,tension:.3}]},options:chartOptions()});
+  }catch(e){fail('pollutantArea')}
+  try{
+    const opt = chartOptions(); opt.indexAxis='y'; opt.plugins.legend.display=false;
+    new Chart(document.getElementById('cityBar').getContext('2d'), {type:'bar',data:{labels:cityMap.map(c=>c.city),datasets:[{label:'Average AQI',data:cityMap.map(c=>c.AQI),backgroundColor:cityMap.map(c=>catColor[category(c.AQI)]),borderRadius:10}]},options:opt});
+  }catch(e){fail('cityBar')}
+  try{
+    new Chart(document.getElementById('pollutantGroup').getContext('2d'), {type:'bar',data:{labels:cityMap.map(c=>c.city),datasets:[{label:'PM2.5',data:cityMap.map(c=>c.PM25),backgroundColor:'#2dd36f'},{label:'PM10',data:cityMap.map(c=>c.PM10),backgroundColor:'#ffd43b'},{label:'NO2',data:cityMap.map(c=>c.NO2),backgroundColor:'#ff922b'},{label:'CO',data:cityMap.map(c=>c.CO),backgroundColor:'#4dabf7'},{label:'SO2',data:cityMap.map(c=>c.SO2),backgroundColor:'#b197fc'}]},options:chartOptions()});
+  }catch(e){fail('pollutantGroup')}
+  try{
+    new Chart(document.getElementById('aqiDonut').getContext('2d'), {type:'doughnut',data:{labels:['Good','Moderate','Poor','Very Poor','Hazardous'],datasets:[{data:catCounts,backgroundColor:['#2dd36f','#ffd43b','#ff922b','#ff6b6b','#c9184a'],borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#e7eef7'}}}}});
+  }catch(e){fail('aqiDonut')}
+}
+window.addEventListener('load', makeCharts);
+</script>
+</body>
+</html>
